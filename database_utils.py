@@ -1,5 +1,6 @@
 import yaml
 from sqlalchemy import create_engine, inspect
+from data_extraction import DataExtractor
 
 class DatabaseConnector:
     def __init__(self, db_creds):
@@ -38,9 +39,9 @@ class DatabaseConnector:
     def list_db_tables(self):
         self.engine.execution_options(isolation_level='AUTOCOMMIT').connect()
         inspector = inspect(self.engine)
-        
-        return inspector.get_table_names()
+        tables = inspector.get_table_names()
 
+        return tables
 # Example usage
 if __name__ == "__main__":
     # Initialize the DatabaseConnector with the path to the credentials file
@@ -52,3 +53,14 @@ if __name__ == "__main__":
     # Access the database engine
     print(db_connector.engine)
     db_connector.list_db_tables()
+    tables = db_connector.list_db_tables()
+    
+    print("Tables in the database:", tables)
+
+    data_extractor = DataExtractor(db_connector)
+    
+    # Read data from a specific table
+    if tables:
+        table_name = tables[0]  # Just an example, you can choose any table from the list
+        df = data_extractor.read_rds_table(table_name)
+        print(f"Data from table {table_name}:\n", df.head())
