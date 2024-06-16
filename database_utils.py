@@ -1,5 +1,5 @@
 import yaml
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, inspect
 
 class DatabaseConnector:
     def __init__(self, db_creds):
@@ -34,6 +34,12 @@ class DatabaseConnector:
                   f"{self.data_loaded['RDS_DATABASE']}")
         engine = create_engine(db_url)
         return engine
+    
+    def list_db_tables(self):
+        self.engine.execution_options(isolation_level='AUTOCOMMIT').connect()
+        inspector = inspect(self.engine)
+        
+        return inspector.get_table_names()
 
 # Example usage
 if __name__ == "__main__":
@@ -45,3 +51,4 @@ if __name__ == "__main__":
     
     # Access the database engine
     print(db_connector.engine)
+    db_connector.list_db_tables()
