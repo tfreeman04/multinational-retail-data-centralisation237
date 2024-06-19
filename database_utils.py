@@ -7,6 +7,7 @@ class DatabaseConnector:
         self.db_creds = db_creds
         self.data_loaded = self.read_db_creds()
         self.engine = self.init_db_engine()
+        # self.data_extractor = DataExtractor(self) can refactor this here ? 
 
     def read_db_creds(self):
         """
@@ -42,6 +43,25 @@ class DatabaseConnector:
         tables = inspector.get_table_names()
 
         return tables
+    
+    def upload_to_db(self, df, table_name):
+        ''' change below
+        from sqlalchemy import create_engine
+        engine = create_engine('postgresql://username:password@localhost:5432/mydatabase')
+        df.to_sql('table_name', engine) '''
+        
+    def list_field_names(self, table_name):
+        """
+        Lists all field names (columns) in the specified table.
+
+        :param table_name: The name of the table to list field names for.
+        :return: A list of field names (column names).
+        """
+        inspector = inspect(self.engine)
+        columns = inspector.get_columns(table_name)
+        field_names = [column['name'] for column in columns]
+        return field_names
+
 # Example usage
 if __name__ == "__main__":
     # Initialize the DatabaseConnector with the path to the credentials file
@@ -61,6 +81,8 @@ if __name__ == "__main__":
     
     # Read data from a specific table
     if tables:
-        table_name = tables[0]  # Just an example, you can choose any table from the list
+        table_name = tables[2]  # Just an example, you can choose any table from the list
         df = data_extractor.read_rds_table(table_name)
         print(f"Data from table {table_name}:\n", df.head())
+    field_names = db_connector.list_field_names("legacy_users")
+    print(field_names)
