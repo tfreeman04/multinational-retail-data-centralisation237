@@ -104,7 +104,7 @@ if __name__ == "__main__":
     # Initialize the DatabaseConnector for the target database using a dictionary
     target_db_config = {
         'HOST': 'localhost',
-        'PASSWORD': 'password',  # Replace with your actual password
+        'PASSWORD': 'Password',  # Replace with your actual password
         'USER': 'postgres',
         'DATABASE': 'sales_data',
         'PORT': 5432
@@ -146,6 +146,19 @@ if __name__ == "__main__":
     print(f"Cleaned data from table {user_table}:\n", cleaned_df.head())
 
     # Upload cleaned data to a new table in the target database
-    new_table_name = 'cleaned_user_data'
+    new_table_name = 'dim_users'
     target_db_connector.upload_to_db(cleaned_df, new_table_name, if_exists='replace')
     print(f"Cleaned data uploaded to table {new_table_name} in the target database.")
+
+    pdf_link = "https://data-handling-public.s3.eu-west-1.amazonaws.com/card_details.pdf"
+    pdf_data_df = data_extractor.retrieve_pdf_data(pdf_link)
+    print("Extracted data from PDF:\n", pdf_data_df.head())
+    
+    cleaned_df = data_cleaning.clean_card_data(pdf_data_df)
+    print("cleaned data from table dim card details",cleaned_df.head())
+    
+    new_table_name_card = 'dim_card_details'
+    #upload cleaned card data to table in the target database
+    target_db_connector.upload_to_db(cleaned_df,new_table_name_card,if_exists ='replace')
+    print(f"Cleaned data uploaded to table {new_table_name_card} in the target database.")
+
