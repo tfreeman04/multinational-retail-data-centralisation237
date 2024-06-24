@@ -96,7 +96,7 @@ class DatabaseConnector:
         field_names = [column['name'] for column in columns]
         return field_names
 
-# Example usage
+
 if __name__ == "__main__":
     # Initialize the DatabaseConnector for the source database using a YAML file
     source_db_connector = DatabaseConnector(db_creds='db_creds.yaml')
@@ -162,3 +162,32 @@ if __name__ == "__main__":
     target_db_connector.upload_to_db(cleaned_df,new_table_name_card,if_exists ='replace')
     print(f"Cleaned data uploaded to table {new_table_name_card} in the target database.")
 
+    # Define the API details
+    api_key = 'yFBQbwXe9J3sd6zWVAMrK6lcxxr0q1lr2PT6DDMX'
+    headers = {'x-api-key': api_key}
+    number_of_stores_endpoint = 'https://aqj7u5id95.execute-api.eu-west-1.amazonaws.com/prod/number_stores'
+    store_details_endpoint = 'https://aqj7u5id95.execute-api.eu-west-1.amazonaws.com/prod/store_details/{store_number}'
+
+    target_db_config = {
+            'RDS_HOST': 'localhost',
+            'RDS_PASSWORD': 'Password',
+            'RDS_USER': 'postgres',
+            'RDS_DATABASE': 'sales_data',
+            'RDS_PORT': 5432
+        }
+    target_db_connector = DatabaseConnector(db_config=target_db_config)
+    # Get the number of stores
+    number_of_stores = data_extractor.list_number_of_stores(number_of_stores_endpoint, headers)
+    print(f"Number of stores: {number_of_stores}")
+
+     # Retrieve and print data for all stores
+    stores_df = data_extractor.retrieve_stores_data(store_details_endpoint, headers, number_of_stores)
+    print(f"Data for all stores:\n{stores_df}")
+
+     # Clean the store data
+    cleaned_stores_df = data_cleaning._clean_store_data(stores_df)
+    print(f"Cleaned data for all stores:\n{cleaned_stores_df}")
+
+    new_table_name = 'dim_store_details'
+    target_db_connector.upload_to_db(cleaned_stores_df, new_table_name, if_exists='replace')
+    print(f"Cleaned data uploaded to table {new_table_name} in the target database.")

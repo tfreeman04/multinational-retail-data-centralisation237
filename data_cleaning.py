@@ -33,6 +33,16 @@ class DataCleaning:
         df = self.remove_incorrect_rows(df)
         return df
     
+    def clean_store_data(self,df):
+
+        df = self.remove_empty_columns(df)
+        df = self.handle_null_values(df)
+        df = self.correct_date_errors(df)
+        df = self.correctly_type_values(df)
+        df = self.remove_incorrect_rows(df)
+        return df
+
+    
     def remove_empty_columns(self, df):
         ''' 
         Handle NULL values in the DataFrame columns by dropping columns with all NULL values.
