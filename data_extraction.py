@@ -4,6 +4,8 @@ import requests
 from sqlalchemy import create_engine
 import time
 from requests.exceptions import RequestException
+import boto3
+from io import StringIO
 
 class DataExtractor:
     def __init__(self, db_connector):
@@ -105,6 +107,38 @@ class DataExtractor:
                     print("Process interrupted by user. Exiting.")
                     return pd.DataFrame(stores_data)
         return pd.DataFrame(stores_data)
+    
+    def extract_from_s3(self, s3_address):
+        try:
+            # Parse the S3 address
+            if not s3_address.startswith("s3://"):
+                raise ValueError("Invalid S3 address. It should start with 's3://'.")
+            
+            s3_parts = s3_address.replace("s3://", "").split("/", 1)
+            
+            if len(s3_parts) != 2:
+                raise ValueError("Invalid S3 address. It should contain both bucket name and key.")
+            
+            bucket_name, key = s3_parts
+
+            if not bucket_name or not key:
+                raise ValueError("Invalid S3 address. Bucket name or key is missing.")
+
+            # Initialize a session using Amazon S3
+            s3 = boto3.client('s3')
+
+            # Get the object from the S3 bucket
+            obj = s3.get_object(Bucket=bucket_name, Key=key)
+
+            # Read the data into a pandas DataFrame
+            data = obj['Body'].read().decode('utf-8')
+            df = pd.read_csv(StringIO(data))
+
+            return df
+        except Exception as e:
+            print(f"Error occurred while extracting data from S3: {e}")
+            return pd.DataFrame()
+
 
     
 

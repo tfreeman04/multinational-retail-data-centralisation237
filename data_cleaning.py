@@ -1,4 +1,5 @@
 import pandas as pd
+import re 
 
 class DataCleaning:
 
@@ -117,3 +118,62 @@ class DataCleaning:
         if 'first_name' in df.columns:
             df = df[df['first_name'] != 'Unknown']
         return df
+    
+    def convert_product_weights(self, products_df):
+        def convert_weight(weight):
+            weight = str(weight).lower().strip()
+            
+            try:
+                # Handle 'kg'
+                if 'kg' in weight:
+                    return float(weight.replace('kg', '').strip())
+                # Handle 'g'
+                elif 'g' in weight:
+                    return float(weight.replace('g', '').strip()) / 1000
+                # Handle 'ml'
+                elif 'ml' in weight:
+                    return float(weight.replace('ml', '').strip()) / 1000
+                # Handle 'l'
+                elif 'l' in weight:
+                    return float(weight.replace('l', '').strip())
+                # Handle patterns like '12 x 100g'
+                elif 'x' in weight:
+                    parts = weight.split('x')
+                    if len(parts) == 2:
+                        num_items = float(parts[0].strip())
+                        weight_per_item = float(parts[1].strip().replace('g', '').replace('kg', '').replace('ml', '').replace('l', '').strip())
+                        total_weight = num_items * weight_per_item
+                        # Assuming weight per item is in grams if no unit is given
+                        if 'kg' in weight or (total_weight >= 1000 and 'g' not in weight and 'ml' not in weight):
+                            return total_weight
+                        return total_weight / 1000
+                # Default case for unexpected formats
+                else:
+                    return None
+            except ValueError:
+                return None
+
+        products_df['weight'] = products_df['weight'].apply(convert_weight)
+        return products_df
+    
+    def clean_products_data(self, products_df):
+        # Convert product weights to a uniform format (kg)
+        products_df = self.convert_product_weights(products_df)
+
+        # Handle missing values
+        products_df.dropna(inplace=True)  # Drop rows with any missing values
+
+        # Remove duplicates
+        products_df.drop_duplicates(inplace=True)
+
+        # Fix data types
+        products_df['weight'] = products_df['weight'].astype(float)  # Ensure weight is a float
+
+        # Standardize text data (example: product names to lower case)
+        if 'product' in products_df.columns:
+            products_df['product'] = products_df['product'].str.lower().str.strip()
+
+        # Handle outliers (example: remove rows with weights that are unrealistically high or low)
+        products_df = products_df[(products_df['weight'] > 0) & (products_df['weight'] < 100)]
+
+        return products_df

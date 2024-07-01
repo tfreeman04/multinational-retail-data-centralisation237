@@ -110,7 +110,7 @@ if __name__ == "__main__":
         'PORT': 5432
     }
     target_db_connector = DatabaseConnector(db_config=target_db_config)
-    
+    '''
     # List all tables in the source database
     source_tables = source_db_connector.list_db_tables()
     print("Tables in the source database:", source_tables)
@@ -160,8 +160,12 @@ if __name__ == "__main__":
     new_table_name_card = 'dim_card_details'
     #upload cleaned card data to table in the target database
     target_db_connector.upload_to_db(cleaned_df,new_table_name_card,if_exists ='replace')
-    print(f"Cleaned data uploaded to table {new_table_name_card} in the target database.")
-
+    print(f"Cleaned data uploaded to table {new_table_name_card} in the target database.") '''
+     # Initialize the DataExtractor
+    data_extractor = DataExtractor(db_connector=source_db_connector)
+    # Initialize the DataCleaning
+    data_cleaning = DataCleaning()
+    '''
     # Define the API details
     api_key = 'yFBQbwXe9J3sd6zWVAMrK6lcxxr0q1lr2PT6DDMX'
     headers = {'x-api-key': api_key}
@@ -185,9 +189,25 @@ if __name__ == "__main__":
     print(f"Data for all stores:\n{stores_df}")
 
      # Clean the store data
-    cleaned_stores_df = data_cleaning._clean_store_data(stores_df)
+    cleaned_stores_df = data_cleaning.clean_store_data(stores_df)
     print(f"Cleaned data for all stores:\n{cleaned_stores_df}")
 
     new_table_name = 'dim_store_details'
     target_db_connector.upload_to_db(cleaned_stores_df, new_table_name, if_exists='replace')
+    print(f"Cleaned data uploaded to table {new_table_name} in the target database.") '''
+
+    #bucket details 
+    s3_address = "s3://data-handling-public/products.csv"
+    products_df = data_extractor.extract_from_s3(s3_address)
+    #test data pulled from buscet correctly 
+    print(products_df.head())
+
+    #cleaned_product_df = data_cleaning.convert_product_weights(products_df)
+    #test data is cean
+    #added method to clean all of the data and included the conversion inside this method. 
+    cleaned_product_df = data_cleaning.clean_products_data(products_df) 
+    print(cleaned_product_df.head)
+    #working perfectly
+    new_table_name = "dim_products"
+    target_db_connector.upload_to_db(cleaned_product_df,new_table_name,if_exists='replace')
     print(f"Cleaned data uploaded to table {new_table_name} in the target database.")
