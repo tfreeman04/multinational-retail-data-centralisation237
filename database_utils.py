@@ -3,6 +3,7 @@ from sqlalchemy import create_engine, inspect
 import pandas as pd
 from data_extraction import DataExtractor
 from data_cleaning import DataCleaning
+import psycopg2
 
 class DatabaseConnector:
     def __init__(self, db_creds=None, db_config=None):
@@ -194,7 +195,7 @@ if __name__ == "__main__":
 
     new_table_name = 'dim_store_details'
     target_db_connector.upload_to_db(cleaned_stores_df, new_table_name, if_exists='replace')
-    print(f"Cleaned data uploaded to table {new_table_name} in the target database.") '''
+    print(f"Cleaned data uploaded to table {new_table_name} in the target database.") 
 
     #bucket details 
     s3_address = "s3://data-handling-public/products.csv"
@@ -209,5 +210,244 @@ if __name__ == "__main__":
     print(cleaned_product_df.head)
     #working perfectly
     new_table_name = "dim_products"
+    #uploaded the cleaded data to the database
     target_db_connector.upload_to_db(cleaned_product_df,new_table_name,if_exists='replace')
     print(f"Cleaned data uploaded to table {new_table_name} in the target database.")
+    # list the tables to find the orders table 
+    source_tables = source_db_connector.list_db_tables()
+    print("Tables in the database:")
+    #for table in source_tables:
+    #    print(table)
+    #df = data_extractor.read_rds_table(orders_table)
+
+    # Identify the user table in the source database
+    orders_table = None
+    for table in source_tables:
+        if 'order' in table.lower():
+            orders_table = table
+            break
+    
+    if not orders_table:
+        raise ValueError("No table containing user data found in the source database.")
+
+    print(f"Orders_data table identified: {orders_table}")
+
+    # List field names for the user data table
+    field_names = source_db_connector.list_field_names(orders_table)
+    print(f"Field names in the table {orders_table}:", field_names)'''
+
+    # Initialize the DataExtractor
+    #data_extractor = DataExtractor(db_connector=source_db_connector)
+    
+    # Read data from the user data table in the source database
+    '''orders_data_df = data_extractor.read_rds_table(orders_table)
+    print(f"Data from table {orders_table} in the source database:\n", orders_data_df.head())
+
+    # Clean orders data
+    cleaned_orders_df = data_cleaning.clean_orders_data(orders_data_df)
+    new_table_name = "orders_table"
+    #uploaded the cleaded data to the database
+    target_db_connector.upload_to_db(cleaned_orders_df,new_table_name,if_exists='replace')
+    print(f"Cleaned data uploaded to table {new_table_name} in the target database.")
+
+
+    s3_address = "https://data-handling-public.s3.eu-west-1.amazonaws.com/date_details.json"
+    dim_date_times_df = data_extractor.extract_from_s3_link(s3_address)
+    #test data pulled from buscet correctly 
+    
+    #print(dim_date_times_df.head())
+
+    #clean the datat from date_times table 
+
+    cleaned_dim_date_times_df = data_cleaning.clean_date_time_data(dim_date_times_df)
+    
+    new_table_name = "dim_date_times"
+    #uploaded the cleaded data to the database
+    target_db_connector.upload_to_db(cleaned_dim_date_times_df,new_table_name,if_exists='replace')
+    print(f"Cleaned data uploaded to table {new_table_name} in the target database.")'''
+
+    #update the data types in the orders table using the targetDatabase created earlier. 
+
+    # Establish a connection to the database
+    try:
+        conn = psycopg2.connect(
+            host=target_db_config['HOST'],
+            user=target_db_config['USER'],
+            password=target_db_config['PASSWORD'],
+            database=target_db_config['DATABASE'],
+            port=target_db_config['PORT']
+        )
+        cursor = conn.cursor()
+        print("Connected to the database!")
+    except psycopg2.Error as e:
+        print(f"Error connecting to the database: {e}")
+        exit(1)
+
+        #once the connection is established change the datatypes in the orders table 
+    '''
+    try:
+        # Alter date_uuid column to UUID type
+        cursor.execute("ALTER TABLE orders_table ALTER COLUMN date_uuid TYPE UUID USING date_uuid::UUID;")
+        conn.commit()
+
+        # Alter user_uuid column to UUID type
+        cursor.execute("ALTER TABLE orders_table ALTER COLUMN user_uuid TYPE UUID USING user_uuid::UUID;")
+        conn.commit()
+
+        # Alter card_number column to VARCHAR with appropriate length
+        cursor.execute("ALTER TABLE orders_table ALTER COLUMN card_number TYPE VARCHAR(20);")  
+        conn.commit()
+
+        # Alter store_code column to VARCHAR with appropriate length
+        cursor.execute("ALTER TABLE orders_table ALTER COLUMN store_code TYPE VARCHAR(20);")  
+        conn.commit()
+
+        # Alter product_code column to VARCHAR with appropriate length
+        cursor.execute("ALTER TABLE orders_table ALTER COLUMN product_code TYPE VARCHAR(20);")  
+        conn.commit()
+
+        # Alter product_quantity column to SMALLINT
+        cursor.execute("ALTER TABLE orders_table ALTER COLUMN product_quantity TYPE SMALLINT;")
+        conn.commit()
+
+        print("Successfully updated data types in the orders table.")
+    
+    except psycopg2.Error as e:
+
+        print(f"Error updating data types: {e}")
+    finally:
+        cursor.close()
+        conn.close()
+
+        #code ran successfully '''
+    '''
+    # SQL command to remove invalid longitude entries
+    clean_longitude_query = """
+        DELETE FROM dim_store_details WHERE longitude !~ '^-?\\d+(\\.\\d+)?$';
+        """
+
+    # SQL command to remove invalid latitude entries
+    clean_latitude_query = """
+        DELETE FROM dim_store_details WHERE latitude !~ '^-?\\d+(\\.\\d+)?$';
+        """
+
+    # Execute the queries
+    cursor.execute(clean_longitude_query)
+    cursor.execute(clean_latitude_query)
+
+    # Commit the changes
+    conn.commit()
+
+    
+
+    print("Invalid entries removed successfully!")    
+    '''
+    
+    '''clean_invalid_staff_numbers_query = """
+            DELETE FROM dim_store_details WHERE staff_numbers !~ '^\d+$';
+            """
+    cursor.execute(clean_invalid_staff_numbers_query)'''
+
+    ''' 
+    #looking at dim_store_details_table again to check date column for errors 
+    #show dim_store_details query
+    show_store_details = """
+            SELECT * FROM dim_store_details;
+            """
+    cursor.execute(show_store_details)
+    rows = cursor.fetchall()
+    colnames = [desc[0]for desc in cursor.description]
+    print(f"Column names: {colnames}")
+    for row in rows:
+            print(row)
+    ''' 
+    #purged the opening_date column
+    #clean_opening_date_query = """
+    #UPDATE dim_store_details SET opening_date = NULL WHERE opening_date !~ '^\\d{4}-\\d{2}-\\d{2}$';
+    #"""
+    #cursor.execute(clean_opening_date_query)
+
+    
+    try:
+        '''# Alter longitude column to float type
+        cursor.execute("ALTER TABLE dim_store_details ALTER COLUMN longitude TYPE FLOAT USING longitude::double precision ;")
+        conn.commit()
+
+        # Alter locality column to VARCHAR type
+        cursor.execute("ALTER TABLE dim_store_details ALTER COLUMN locality TYPE VARCHAR(255);")
+        conn.commit()
+
+        # Alter store_code column to VARCHAR with appropriate length
+        cursor.execute("ALTER TABLE dim_store_details ALTER COLUMN store_code TYPE VARCHAR(20);")  
+        conn.commit()
+
+        # Alter staff_numbers column to SMALLINT 
+        cursor.execute("ALTER TABLE dim_store_details ALTER COLUMN staff_numbers TYPE SMALLINT USING staff_numbers::smallint;")  
+        conn.commit()
+
+        # Alter opening_date column to DATE
+        cursor.execute("ALTER TABLE dim_store_details ALTER COLUMN opening_date TYPE DATE USING opening_date::date;")  
+        conn.commit()
+
+        # Alter store_type column to VARCHAR NULLABLE
+        cursor.execute("ALTER TABLE dim_store_details ALTER COLUMN store_type TYPE VARCHAR(255);")
+        cursor.execute("ALTER TABLE dim_store_details ALTER COLUMN store_type DROP NOT NULL;")
+        
+        conn.commit()
+
+        #Alter latitude column to float type
+        cursor.execute("ALTER TABLE dim_store_details ALTER COLUMN latitude TYPE FLOAT USING latitude::double precision;")
+        conn.commit()
+
+        # Alter country_code to VARCHAR with appropriate length 
+        cursor.execute("ALTER TABLE dim_store_details ALTER COLUMN country_code TYPE VARCHAR(255);")
+
+        #Alter continent column to VARCHAR with apprpriate length
+
+        cursor.execute("ALTER TABLE dim_store_details ALTER COLUMN continent TYPE VARCHAR(255);")
+
+
+        print("Successfully updated data types in the dim_store_details.")'''
+
+        # Remove '£' character from product_price column
+        remove_pound_sign_query = """
+        UPDATE dim_products
+        SET product_price = REPLACE(product_price, '£', '');
+        """
+        cursor.execute(remove_pound_sign_query)
+
+
+        conn.commit()
+
+        add_weight_class_query = """
+        ALTER TABLE dim_products
+        ADD COLUMN weight_class VARCHAR(20);
+
+        UPDATE dim_products
+        SET weight_class = CASE
+            WHEN weight < 2 THEN 'Light'
+            WHEN weight >= 2 AND weight < 40 THEN 'Mid_Sized'
+            WHEN weight >= 40 AND weight < 140 THEN 'Heavy'
+            ELSE 'Truck_Required'
+        END;
+        """
+        cursor.execute(add_weight_class_query)
+        conn.commit()
+        print("productdetails updated successfully")
+    
+    except psycopg2.Error as e:
+
+        print(f"Error updating data types: {e}")
+    finally:
+        cursor.close()
+        conn.close()
+
+
+
+
+
+
+
+
+
+    

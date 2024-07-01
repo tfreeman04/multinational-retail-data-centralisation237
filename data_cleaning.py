@@ -42,6 +42,14 @@ class DataCleaning:
         df = self.correctly_type_values(df)
         df = self.remove_incorrect_rows(df)
         return df
+    
+    def clean_date_time_data(self,df):
+        df = self.remove_empty_columns(df)
+        df = self.handle_null_values(df)
+        df = self.correct_date_errors(df)
+        df = self.correctly_type_values(df)
+        df = self.remove_incorrect_rows(df)
+        return df
 
     
     def remove_empty_columns(self, df):
@@ -177,3 +185,13 @@ class DataCleaning:
         products_df = products_df[(products_df['weight'] > 0) & (products_df['weight'] < 100)]
 
         return products_df
+    
+    def clean_orders_data(self, orders_df):
+        # Remove specified columns from the orders DataFrame
+        columns_to_remove = ['first_name', 'last_name', '1']
+        orders_df_cleaned = orders_df.drop(columns=columns_to_remove, errors='ignore')
+        
+        # Optionally, you can also remove any rows with NaN values
+        orders_df_cleaned = orders_df_cleaned.dropna()
+
+        return orders_df_cleaned

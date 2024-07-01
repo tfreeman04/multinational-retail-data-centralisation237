@@ -138,7 +138,21 @@ class DataExtractor:
         except Exception as e:
             print(f"Error occurred while extracting data from S3: {e}")
             return pd.DataFrame()
+        
+    def extract_from_s3_link(self, s3_address):
+        try:
+            response = requests.get(s3_address)
+            json_data = response.json()
+            
+            # Convert to pandas DataFrame
+            df = pd.DataFrame(json_data)
+            
+            return df
+        
+        except Exception as e:
+            print(f"Error extracting data from S3: {e}")
+            return None
 
 
-    
+        
 
