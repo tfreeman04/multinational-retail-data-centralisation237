@@ -368,8 +368,8 @@ if __name__ == "__main__":
     #cursor.execute(clean_opening_date_query)
 
     
-    try:
-        '''# Alter longitude column to float type
+    '''try:
+        # Alter longitude column to float type
         cursor.execute("ALTER TABLE dim_store_details ALTER COLUMN longitude TYPE FLOAT USING longitude::double precision ;")
         conn.commit()
 
@@ -407,7 +407,7 @@ if __name__ == "__main__":
         cursor.execute("ALTER TABLE dim_store_details ALTER COLUMN continent TYPE VARCHAR(255);")
 
 
-        print("Successfully updated data types in the dim_store_details.")'''
+        print("Successfully updated data types in the dim_store_details.")
 
         # Remove '£' character from product_price column
         remove_pound_sign_query = """
@@ -418,7 +418,7 @@ if __name__ == "__main__":
 
 
         conn.commit()
-
+        # add new column and details for column based on weight
         add_weight_class_query = """
         ALTER TABLE dim_products
         ADD COLUMN weight_class VARCHAR(20);
@@ -433,8 +433,156 @@ if __name__ == "__main__":
         """
         cursor.execute(add_weight_class_query)
         conn.commit()
-        print("productdetails updated successfully")
+        print("product details updated successfully")
     
+    except psycopg2.Error as e:
+
+        print(f"Error updating data types: {e}")
+    finally:
+        cursor.close()
+        conn.close()
+        
+    '''
+    
+    #cleaning the date_added column 
+
+    #clean_date_added_query = """
+       # UPDATE dim_products SET date_added = NULL WHERE date_added !~ '^\\d{4}-\\d{2}-\\d{2}$';
+       # """
+    #cursor.execute(clean_date_added_query)
+    
+    # changing the datatypes for the dim_products table 
+    '''
+    try:
+        # ALTER product_price column from TEXT to FLOAT 
+        cursor.execute("ALTER TABLE dim_products ALTER COLUMN product_price TYPE FLOAT USING product_price::double precision ;")
+        conn.commit()
+        
+        # ALTER weight column from TEXT to FLOAT
+        cursor.execute("ALTER TABLE dim_products ALTER COLUMN weight TYPE FLOAT USING weight::double precision ;")
+        conn.commit()
+
+        #ALTER EAN column from TEXT to VARCHAR 
+        #cursor.execute("ALTER TABLE dim_products ALTER COLUMN EAN TYPE VARCHAR(255);")
+        #conn.commit()
+
+        #ALTER product_code column from TEXT to VARCHAR
+        cursor.execute("ALTER TABLE dim_products ALTER COLUMN product_code TYPE VARCHAR(255);")
+        conn.commit()
+
+        #ALTER date_added column to DATE
+        cursor.execute("ALTER TABLE dim_products ALTER COLUMN date_added TYPE DATE USING date_added::date;")  
+        conn.commit()
+
+        #ALTER uuid column from TEXT to UUID
+        cursor.execute("ALTER TABLE dim_products ALTER COLUMN uuid TYPE UUID USING uuid::UUID;")
+        conn.commit()
+
+        #ALTER still_available column from TEXT to BOOL
+        #cursor.execute("ALTER TABLE dim_products ALTER COLUMN still_available TYPE BOOL;")
+        #conn.commit()
+
+        #ALTER weight_class column from TEXT to VARCHAR
+
+        cursor.execute("ALTER TABLE dim_products ALTER COLUMN weight_class TYPE VARCHAR(100);")
+        conn.commit()
+
+        print("Successfully updated data types in the dim_products.")
+
+    except psycopg2.Error as e:
+
+        print(f"Error updating data types: {e}")
+    finally:
+        cursor.close()
+        conn.close()
+        '''
+    # updated the product_table but realised I needed to rename the removed column to still_available.
+    '''
+    try:
+    
+        #cursor.execute("ALTER TABLE dim_products  RENAME COLUMN removed TO still_available;")
+        #conn.commit()
+        #ALTER still_available column from TEXT to BOOL
+        cursor.execute("ALTER TABLE dim_products ALTER COLUMN still_available TYPE BOOL USING case still_available when still_available then true else false end;")
+        conn.commit()
+
+
+
+    except psycopg2.Error as e:
+
+        print(f"Error updating data types: {e}")
+    finally:
+        cursor.close()
+    '''
+        
+        
+    # cursor.execute("SELECT * FROM dim_products;")
+    # rows = cursor.fetchall()
+    # colnames = [desc[0]for desc in cursor.description]
+    # print(f"Column names: {colnames}")
+    # for row in rows:
+    #         print(row)
+    # conn.close()
+    # checked the columns updated correctly 
+
+    #Updating the dim_date_times table 
+    '''
+    try:
+        # ALTER column month from TEXT to VARCHAR (10)
+
+        cursor.execute("ALTER TABLE dim_date_times ALTER COLUMN month TYPE VARCHAR(10);")
+        conn.commit()
+
+        #ALTER column year from TEXT to VARCHAR (10)
+        cursor.execute("ALTER TABLE dim_date_times ALTER COLUMN year TYPE VARCHAR(10);")
+        conn.commit()
+
+        #ALTER column day from TEXT to VARCHAR (10)
+        cursor.execute("ALTER TABLE dim_date_times ALTER COLUMN day TYPE VARCHAR(10);")
+        conn.commit()
+
+        #ALTER column time_period from TEXT to VARCHAR (10)
+        cursor.execute("ALTER TABLE dim_date_times ALTER COLUMN time_period TYPE VARCHAR(50);")
+        conn.commit()
+
+        #ALTER column date_uuid from TEXT to UUID (10)
+        cursor.execute("ALTER TABLE dim_date_times ALTER COLUMN date_uuid TYPE UUID USING date_uuid::UUID;")
+        conn.commit()
+
+        
+    except psycopg2.Error as e:
+
+        print(f"Error updating data types: {e}")
+    finally:
+        cursor.close()
+        conn.close()
+    '''
+
+        # updating the dim_card_details table changing data types
+
+    try:
+
+        #ALTER column card_number column TYPE from TEXT to VARCHAR(17)
+        cursor.execute("ALTER TABLE dim_card_details ALTER COLUMN card_number TYPE VARCHAR(25);")
+        conn.commit()
+
+        #ALTER column expiry_date column TYPE from TEXT to VARCHAR(10)
+        cursor.execute("ALTER TABLE dim_card_details ALTER COLUMN expiry_date TYPE VARCHAR(10);")
+        conn.commit()
+
+        # clean the date_payment_confirmed column 
+
+        clean_date_payment_confirmed_query = """
+        UPDATE dim_card_details SET date_payment_confirmed = NULL WHERE date_payment_confirmed !~ '^\\d{4}-\\d{2}-\\d{2}$';
+        """
+        cursor.execute(clean_date_payment_confirmed_query)
+        #ALTER column date_payment TYPE from TEXT to DATE 
+        cursor.execute("ALTER TABLE dim_card_details ALTER COLUMN date_payment_confirmed TYPE DATE USING date_payment_confirmed::date;")  
+        conn.commit()
+
+
+        print("dim_card_details updated successfully")
+        
     except psycopg2.Error as e:
 
         print(f"Error updating data types: {e}")
@@ -443,11 +591,3 @@ if __name__ == "__main__":
         conn.close()
 
 
-
-
-
-
-
-
-
-    
