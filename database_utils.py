@@ -96,6 +96,24 @@ class DatabaseConnector:
         columns = inspector.get_columns(table_name)
         field_names = [column['name'] for column in columns]
         return field_names
+    
+    def fetch_table(self,db_config, table_name):
+        try:
+            # Connect to the PostgreSQL database
+            conn = psycopg2.connect(
+                dbname=db_config['DATABASE'],
+                user=db_config['USER'],
+                password=db_config['PASSWORD'],
+                host=db_config['HOST'],
+                port=db_config['PORT']
+            )
+            query = f"SELECT * FROM {table_name};"
+            df = pd.read_sql_query(query, conn)
+            conn.close()
+            return df
+        except Exception as e:
+            print(f"Error fetching table: {e}")
+            return None
 
 
 if __name__ == "__main__":
@@ -557,7 +575,7 @@ if __name__ == "__main__":
         cursor.close()
         conn.close()
     '''
-
+    '''
         # updating the dim_card_details table changing data types
 
     try:
@@ -590,4 +608,17 @@ if __name__ == "__main__":
         cursor.close()
         conn.close()
 
+    '''
+    # all updated successfully so far.
 
+
+    # adding in the primary keys 
+    # checked data for table and there was still NULL values so the table needed to be pulled cleaned and re-uploaded 
+
+    card_details_df = target_db_connector.fetch_table(target_db_config, 'dim_card_details')
+    print(card_details_df.head())
+
+
+    #card_details_df = data_cleaning.clean_card_data(card_details_df)
+    card_details_df_cleaned = data_cleaning.handle_null_values(card_details_df)
+    print(card_details_df_cleaned)

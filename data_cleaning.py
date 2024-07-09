@@ -87,9 +87,16 @@ class DataCleaning:
         if 'email_address' in df.columns:
             df.dropna(subset=['email_address'], inplace=True)
 
-        # Implement other specific NULL handling logic here as needed...
+        if 'card_details' in df.columns:
+            df.dropna(subset=['card_details'], inplace=True)
 
-        return df
+        # Implement other specific NULL handling logic here as needed...
+        df.dropna(how = "any")
+
+        cleaned_df = df.dropna(how='any')  # Drop all rows with any NULL values
+        cleaned_df.reset_index(drop=True, inplace=True) 
+        
+        return cleaned_df
     
     def correct_date_errors(self, df):
         """
