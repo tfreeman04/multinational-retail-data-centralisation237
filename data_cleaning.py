@@ -1,6 +1,6 @@
 import pandas as pd
 import re 
-
+import psycopg2
 class DataCleaning:
 
     def __init__(self):
@@ -18,7 +18,16 @@ class DataCleaning:
         df = self.correct_date_errors(df)
         df = self.correctly_type_values(df)
         df = self.remove_incorrect_rows(df)
-        return df
+        cleaned_df = df.dropna(subset=['user_uuid'])
+
+    # Ensure there are no duplicates in the user_uuid column
+        cleaned_df = cleaned_df.drop_duplicates(subset=['user_uuid'])
+
+    # Fill any remaining NULL values in other columns with 'Unknown'
+        cleaned_df = cleaned_df.fillna('Unknown')
+
+        return cleaned_df
+        
     
     def clean_card_data(self, df):
         """
@@ -81,17 +90,17 @@ class DataCleaning:
         """
         # Example: Fill missing values in 'first_name' column with 'Unknown'
         if 'first_name' in df.columns:
-            df['first_name'].fillna('Unknown', inplace=True)
+            cleaned_df =df['first_name'].fillna('Unknown', inplace=True)
 
         # Example: Drop rows where 'email_address' is NULL
         if 'email_address' in df.columns:
-            df.dropna(subset=['email_address'], inplace=True)
+            cleaned_df=df.dropna(subset=['email_address'], inplace=True)
 
         if 'card_details' in df.columns:
-            df.dropna(subset=['card_details'], inplace=True)
+            cleaned_df=df.dropna(subset=['card_details'], inplace=True)
 
         # Implement other specific NULL handling logic here as needed...
-        df.dropna(how = "any")
+        cleaned_df=df.dropna(how = "any")
 
         cleaned_df = df.dropna(how='any')  # Drop all rows with any NULL values
         cleaned_df.reset_index(drop=True, inplace=True) 
@@ -202,3 +211,61 @@ class DataCleaning:
         orders_df_cleaned = orders_df_cleaned.dropna()
 
         return orders_df_cleaned
+    
+
+    def clean_and_add_primary_key(self,db_config, table_name, column_name):
+        try:
+            # Connect to the PostgreSQL database
+            conn = psycopg2.connect(
+                dbname=db_config['DATABASE'],
+                user=db_config['USER'],
+                password=db_config['PASSWORD'],
+                host=db_config['HOST'],
+                port=db_config['PORT']
+            )
+            cur = conn.cursor()
+
+            # Remove rows with NULL values in the primary key column
+            delete_nulls_query = f"""
+            DELETE FROM {table_name}
+            WHERE {column_name} IS NULL;
+            """
+            cur.execute(delete_nulls_query)
+            conn.commit()
+
+            # Ensure uniqueness of the primary key column
+            check_duplicates_query = f"""
+            SELECT {column_name}, COUNT(*)
+            FROM {table_name}
+            GROUP BY {column_name}
+            HAVING COUNT(*) > 1;
+            """
+            cur.execute(check_duplicates_query)
+            duplicates = cur.fetchall()
+
+            if duplicates:
+                print(f"Duplicates found in {column_name} column: {duplicates}")
+                return
+
+            # Add primary key constraint
+            add_pk_query = f"""
+            ALTER TABLE {table_name}
+            ADD CONSTRAINT pk_{column_name} PRIMARY KEY ({column_name});
+            """
+            cur.execute(add_pk_query)
+            conn.commit()
+
+            print(f"Primary key added to {column_name} in {table_name} successfully.")
+
+            # Close the cursor and connection
+            cur.close()
+            conn.close()
+
+        except Exception as e:
+            print(f"Error adding primary key: {e}")
+            if conn is not None:
+                conn.rollback()
+            if cur is not None:
+                cur.close()
+            if conn is not None:
+                conn.close()

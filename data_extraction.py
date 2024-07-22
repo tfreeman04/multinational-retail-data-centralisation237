@@ -83,7 +83,7 @@ class DataExtractor:
 
     def retrieve_stores_data(self, store_endpoint, headers, num_stores):
         stores_data = []
-        for store_number in range(1, num_stores + 1):
+        for store_number in range(0, num_stores + 1):
             success = False
             retries = 3
             while not success and retries > 0:
